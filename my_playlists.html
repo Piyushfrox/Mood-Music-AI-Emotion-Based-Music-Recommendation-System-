@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Liked Playlists</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style1.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-section">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MoodMusic Logo" class="logo-image">
+        <span class="logo-text">MoodMusic</span>
+      </div>
+    </header>
+
+<main class="content">
+  <h1 class="welcome-heading">💖 My Liked Playlists</h1>
+
+  {% if playlists %}
+    {% for mood, link in playlists %}
+      <div class="playlist-card">
+        <h3 class="playlist-title">
+          {% if mood == 'HAPPY' %}
+            🎉 Happy Mood Playlist
+          {% elif mood == 'SAD' %}
+            💔 Sad Mood Playlist
+          {% else %}
+            ☕ Neutral / Focus Playlist
+          {% endif %}
+        </h3>
+
+        <iframe 
+          src="{{ link }}" 
+          width="500" height="380"
+          frameborder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          style="border-radius:12px; margin-top:10px;">
+        </iframe>
+
+        <!-- 🗑 Remove Button -->
+        <button class="remove-button" onclick="removePlaylist('{{ link }}')">🗑 Remove Playlist</button>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#ccc;">No liked playlists yet. Try liking one!</p>
+  {% endif %}
+
+  <a href="/" class="start-button" style="margin-top:40px;">⬅ Back to Dashboard</a>
+  <a href="/logout" class="logout-button">🚪 Logout</a>
+</main>
+</div>
+<script>
+async function removePlaylist(song_link) {
+  if (!confirm("Are you sure you want to remove this playlist?")) return;
+
+  const formData = new FormData();
+  formData.append('song_link', song_link);
+
+  const response = await fetch('/remove_playlist', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await response.json();
+  alert(data.message);
+  window.location.reload(); // Refresh page to update the list
+}
+</script>
+</body>
+</html>

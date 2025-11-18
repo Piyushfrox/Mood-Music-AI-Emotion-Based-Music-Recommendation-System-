@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodMusicAI</title>
+
+    <!-- Correct Flask CSS Path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style1.css') }}">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-section">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MoodMusicAI Logo" class="logo-image">
+                <span class="logo-text">MoodMusic</span>
+            </div>
+        </header>
+
+        <main class="content">
+            <h1 class="welcome-heading">Welcome to MoodMusic</h1>
+            {% if username %}
+<p style="color:#AEFD00; font-size:1.3em;">Welcome, {{ username }} 👋</p>
+{% endif %}
+
+
+            <p class="tagline">" Discover music that matches your mood "</p>
+
+            <h2 class="section-heading">How Facial Expression Tracking Works</h2>
+            <p class="section-description">
+                Our system analyzes your facial expressions to suggest the perfect soundtrack for your mood.
+            </p>
+
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-icon">
+                        <img src="{{ url_for('static', filename='images/capture face.png') }}" alt="Capture Face Icon">
+                    </div>
+                    <span class="step-number">1. Capture Face</span>
+                </div>
+                <div class="step-item">
+                    <div class="step-icon">
+                        <img src="{{ url_for('static', filename='images/get music icon.png') }}" alt="Analyze Mood Icon">
+                    </div>
+                    <span class="step-number">2. Analyze Mood</span>
+                </div>
+                <div class="step-item">
+                    <div class="step-icon">
+                        <img src="{{ url_for('static', filename='images/mood music ai.png') }}" alt="Get Music Icon">
+                    </div>
+                    <span class="step-number">3. Get Music</span>
+                </div>
+            </div>
+
+            <button class="start-button" onclick="captureAndSendImage()">Start Your Experience</button>
+            <video id="cameraFeed" autoplay playsinline width="700" height="500" style="display:none; border-radius:10px;"></video>
+
+            <p id="emotionResult"></p>
+            <div id="musicSection"></div>
+
+            <button id="captureAgainButton" class="start-button" style="display:none;" onclick="captureAgain()">📸 Capture Again</button>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:15px;">
+  <a href="/emotion_stats" class="start-button">📊 View Mood Analytics</a>
+  <a href="/my_playlists" class="start-button">💖 View My Liked Playlists</a>
+  <a href="/logout" class="logout-button">🚪 Logout</a>
+</div>
+
+        </main>
+
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="#" class="footer-link">About Us</a>
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">Privacy Policy</a>
+            </div>
+            <p class="copyright">&copy; Created by Piyush Punera & Vaibhav Pant</p>
+        </footer>
+    </div>
+
+    <!-- Countdown overlay (MOVED outside container for visibility) -->
+    <div id="countdown">3</div>
+
+    <!-- JavaScript -->
+<script>
+async function captureAndSendImage() {
+  const video = document.getElementById('cameraFeed');
+  const emotionResult = document.getElementById('emotionResult');
+  const countdown = document.getElementById('countdown');
+  const captureAgainButton = document.getElementById('captureAgainButton');
+  const musicSection = document.getElementById('musicSection');
+
+  try {
+    // Reset UI
+    captureAgainButton.style.display = 'none';
+    emotionResult.innerText = "";
+    musicSection.innerHTML = "";
+
+    // Start webcam
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    video.style.display = 'block';
+
+    // Countdown
+    countdown.style.display = 'block';
+    for (let i = 5; i >= 1; i--) {
+      countdown.innerText = i;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    countdown.innerText = "📸";
+    await new Promise(resolve => setTimeout(resolve, 800));
+    countdown.style.display = 'none';
+
+    emotionResult.innerText = "Analyzing your mood...";
+
+    // Capture image
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Stop camera
+    stream.getTracks().forEach(track => track.stop());
+    video.style.display = 'none';
+
+// Send to backend (optimized & stable)
+canvas.toBlob(async (blob) => {
+  try {
+    const formData = new FormData();
+    formData.append('image', blob, 'capture.jpg');
+
+    emotionResult.innerText = "Analyzing your mood...";
+    console.log("📤 Sending image to /predict...");
+
+    const response = await fetch('/predict', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    console.log("✅ Server response:", data);
+
+    if (data.error) {
+      emotionResult.style.color = "orange";
+      emotionResult.innerText = "⚠️ " + data.error;
+      return;
+    }
+
+    const emotion = data.emotion.toString();
+    emotionResult.style.color = "#ccff00";
+    emotionResult.innerText = "Detected Emotion: " + emotion;
+    showPlaylist(emotion);
+  } catch (err) {
+    console.error("❌ Upload error:", err);
+    emotionResult.style.color = "red";
+    emotionResult.innerText = "Error sending image to server.";
+  } finally {
+    captureAgainButton.style.display = 'inline-block';
+  }
+}, 'image/jpeg');
+
+
+  } catch (err) {
+    console.error("Camera access error:", err);
+    emotionResult.innerText = "Error: Unable to access your webcam.";
+  }
+}
+
+// 📸 Retake
+function captureAgain() {
+  document.getElementById('emotionResult').innerText = "";
+  document.getElementById('captureAgainButton').style.display = 'none';
+  document.getElementById('musicSection').innerHTML = "";
+  captureAndSendImage();
+}
+
+// 🎵 Show Playlist
+function showPlaylist(emotion) {
+  const musicSection = document.getElementById('musicSection');
+  let playlistLink = "";
+  let playlistName = "";
+
+if (emotion === "HAPPY") {
+  playlistName = "🎉 Happy Vibes Playlist";
+  playlistLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DXdPec7aLTmlC";
+} else if (emotion === "SAD") {
+  playlistName = "💔 Sad & Chill Playlist";
+  playlistLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DX7qK8ma5wgG1";
+} else {
+  playlistName = "☕ Focus / Lofi Beats";
+  playlistLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DX2UXfvEIZvDK";
+}
+
+
+musicSection.innerHTML = `
+  <h3 style="color:#AEFD00; margin-top:30px;">${playlistName}</h3>
+  <div style="display:flex; justify-content:center; width:100%; margin-top:20px;">
+    <iframe 
+      src="${playlistLink}" 
+      style="
+        border-radius:16px; 
+        width:90%; 
+        max-width:800px; 
+        height:500px; 
+        box-shadow:0 0 25px rgba(174, 253, 0, 0.4);
+      " 
+      frameborder="0" allowfullscreen 
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy">
+    </iframe>
+  </div>
+  <button class="start-button" style="margin-top:25px;" onclick="likeSong('${emotion}', '${playlistLink}')">❤️ Like This Playlist</button>
+`;
+setTimeout(() => musicSection.classList.add('show'), 100);
+
+
+}
+async function likeSong(emotion, link) {
+  const formData = new FormData();
+  formData.append('emotion', emotion);
+  formData.append('song_link', link);
+
+  const response = await fetch('/like_song', { method: 'POST', body: formData });
+  const data = await response.json();
+  alert(data.message);
+}
+</script>
+</body>
+</html>

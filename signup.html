@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signup | Mood App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style1.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1 class="welcome-heading">Create Account ✨</h1>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <input type="text" name="username" placeholder="Choose username" required><br>
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Create password" required><br>
+        <button type="submit" class="start-button">Sign Up</button>
+    </form>
+
+    <p>Already have an account? <a href="/login" style="color:#AEFD00;">Login</a></p>
+</div>
+
+</body>
+</html>

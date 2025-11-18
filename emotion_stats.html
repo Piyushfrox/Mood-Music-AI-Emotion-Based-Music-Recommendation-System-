@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Analytics</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style1.css') }}">
+</head>
+
+<body>
+<div class="container">
+
+  <header class="header">
+    <div class="logo-section">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-image">
+      <span class="logo-text">Mood Analytics</span>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <h1 class="welcome-heading">📊 Mood Analysis Dashboard</h1>
+    <p class="tagline">Visualize your emotional patterns with data</p>
+
+    <!-- Time Range Selector -->
+    <div style="margin: 20px;">
+      <label style="color:#AEFD00; font-size:1.2em; font-weight:600;">
+        Select Time Range:
+      </label>
+
+      <select id="timeRange"
+              onchange="updateChart()"
+              style="padding:10px; border-radius:10px; background:#111;
+                     color:#AEFD00; border:2px solid #AEFD00; font-size:1em;">
+        <option value="7"  {% if days == 7 %}selected{% endif %}>Last 7 Days</option>
+        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 Days</option>
+      </select>
+    </div>
+
+    {% if chart_data and pie_data %}
+
+      <!-- Line Chart -->
+      <h2 style="color:#AEFD00; margin-top:40px;">Emotion Trend (Last {{ days }} Days)</h2>
+      <img src="data:image/png;base64,{{ chart_data }}"
+           style="width:85%; max-width:850px; border-radius:15px;
+                  margin-top:20px; box-shadow:0 0 20px #AEFD00;">
+
+
+      <!-- Pie Chart -->
+      <h2 style="color:#AEFD00; margin-top:50px;">Emotion Distribution</h2>
+      <img src="data:image/png;base64,{{ pie_data }}"
+           style="width:60%; max-width:450px; border-radius:15px;
+                  box-shadow:0 0 20px #AEFD00;">
+
+    {% else %}
+
+      <p style="margin-top:40px; font-size:1.2em; color:#ccc;">
+        No emotion data available yet. Try analyzing your mood first!
+      </p>
+
+    {% endif %}
+
+    <a href="/" class="start-button" style="margin-top:40px;">⬅ Back to Dashboard</a>
+
+  </main>
+
+</div>
+
+<script>
+function updateChart() {
+  const days = document.getElementById("timeRange").value;
+  window.location.href = `/emotion_stats?range=${days}`;
+}
+</script>
+
+</body>
+</html>
